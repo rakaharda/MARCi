@@ -104,7 +104,6 @@ def extrude_bone(armature, from_bone, vec, name, parent="Root", orient_type="GLO
 
 def duplicate_bone(armature, bone_name, name=None, parent=None, length=None):
     editmode()
-    print(bone_name)
     select_bone(armature, bone_name)
     bpy.ops.armature.duplicate()
     bone = bpy.context.selected_bones[0]
@@ -326,6 +325,8 @@ def mch_bone(bone):
 
 def ctrl_bone(bone):
     return bone + ".Controller"
+
+SIDES = [left_bone, right_bone]
 
 def add_vertex_subtract(from_group, group, prefix = ""):
     bpy.ops.object.modifier_add(type='VERTEX_WEIGHT_MIX')
@@ -604,6 +605,7 @@ def rig_foot_rocker(rig: bpy.types.Object):
 def fix_hand_driver(rig):
     """Fixes wrong interaction of hand corrective shapekeys with IK"""
     armature = rig.data
+    rig.data.use_mirror_x = False
     sides = [left_bone, right_bone]
     for side in sides:
         hand_driver = side("Hand.driver")
@@ -615,17 +617,18 @@ def fix_hand_driver(rig):
         select_bone(armature, hand_driver)
         bpy.ops.pose.armature_apply(selected=True)
         bpy.ops.pose.bone_layers(layers=al.single_layer(25))
-    sides = ['L', 'R']
     for side in sides:
-        hand_driver = left_bone("Hand.driver") if side == 'L' else right_bone("Hand.driver")
+        hand_driver = side("Hand.driver")
+        suffix = side()[1:2]
         for f in armature.animation_data.drivers:
-            if f"pJCMHandDwn_70_{side}(fin)" in f.data_path or f"pJCMHandUp_80_{side}(fin)" in f.data_path:
+            if f"pJCMHandDwn_70_{suffix}(fin)" in f.data_path or f"pJCMHandUp_80_{suffix}(fin)" in f.data_path:
                 f.driver.variables[0].targets[0].bone_target = hand_driver
 
 
 def fix_foot_driver(rig):
     """Fixes wrong interaction of foot corrective shapekeys with IK (kind of)"""
     armature = rig.data
+    rig.data.use_mirror_x = False
     sides = [left_bone, right_bone]
     for side in sides:
         foot_driver = side("Foot.driver")
@@ -636,22 +639,65 @@ def fix_foot_driver(rig):
         posemode()
         select_bone(armature, foot_driver)
         bpy.ops.pose.armature_apply(selected=True)
-        bpy.ops.pose.bone_layers(layers=al.single_layer(25))
-    sides = ['L', 'R']
+        bpy.ops.pose.bone_layers(layers=al.single_layer(27))
     for side in sides:
-        foot_driver = left_bone("Foot.driver") if side == 'L' else right_bone("Foot.driver")
-        for f in armature.animation_data.drivers:
-            if f"pJCMFootDwn_75_{side}(fin)" in f.data_path:
-                f.driver.variables[0].targets[0].bone_target = foot_driver
-                f.driver.expression = '-1.13*A' # initial down 0.764*A
-            elif f"pJCMHDFootUp_40_{side}(fin)" in f.data_path:
-                f.driver.variables[0].targets[0].bone_target = foot_driver
-                f.driver.expression = '1.45*A' # initial up -1.432*A
+        foot_driver = side("Foot.driver")
+        suffix = side()[1:2]
+        for drv in armature.animation_data.drivers:
+            if f"pJCMFootDwn_75_{suffix}(fin)" in drv.data_path:
+                drv.driver.variables[0].targets[0].bone_target = foot_driver
+                drv.driver.expression = '-1.13*A' # initial down 0.764*A
+            elif f"pJCMHDFootUp_40_{suffix}(fin)" in drv.data_path:
+                drv.driver.variables[0].targets[0].bone_target = foot_driver
+                drv.driver.expression = '1.45*A' # initial up -1.432*A
 
 
 def fix_shldr_driver(rig: bpy.types.Object):
     """Fixes wrong interaction of foot corrective shapekeys with IK (kind of)"""
     arm = rig.data
+    rig.data.use_mirror_x = False
+    al.show_all(arm)
+    for side in SIDES:
+        shldr_driver_x = side("Shldr.Drv.X")
+        shldr = side(arm_bones[0])
+        duplicate_bone(arm, shldr, shldr_driver_x, length = 0.03)
+        add_locked_track_constraint(rig, shldr_driver_x, shldr, 1.0, 'TRACK_Y', 'LOCK_X')
+        add_limit_rotation_constraint(arm, shldr_driver_x, axis = "x", min_x = -40, max_x = 110)
+        posemode()
+        select_bone(arm, shldr_driver_x)
+        bpy.ops.pose.bone_layers(layers=al.single_layer(25))
+        
+        shldr_driver_z = side("Shldr.Drv.Z")
+        duplicate_bone(arm, shldr, shldr_driver_z, length = 0.03)
+        add_locked_track_constraint(rig, shldr_driver_z, shldr, 1.0, 'TRACK_Y', 'LOCK_Z')
+        add_limit_rotation_constraint(arm, shldr_driver_z, axis = "z", min_z = -40, max_z = 90)
+        posemode()
+        select_bone(arm, shldr_driver_z)
+        bpy.ops.pose.bone_layers(layers=al.single_layer(25))
+
+        ctrl_side = 'n' if side() == '.L' else ''
+        suffix = side()[1:2]
+        drivers_to_fix_x = [f"CTRLMD_N_YRotate_{ctrl_side}110(fin)", f"pJCMShldrFwd_110_{suffix}(fin)", ]
+        drivers_to_fix_z = [f"pJCMShldrDown_40_{suffix}(fin)", f"pJCMShldrUp_90_{suffix}(fin)", 
+                            f"CTRLMD_N_ZRotate_{ctrl_side}40(fin)", f"CTRLMD_N_ZRotate_{ctrl_side}90(fin)"]
+        for drv in arm.animation_data.drivers:
+            if any(drv_name in drv.data_path for drv_name in drivers_to_fix_x):
+                print("Driver:", drv.data_path)
+                for var in drv.driver.variables:
+                    try:
+                        # if var.targets[0].bone_target == shldr:
+                        var.targets[0].bone_target = shldr_driver_x
+                    except AttributeError:
+                        pass
+            elif any(drv_name in drv.data_path for drv_name in drivers_to_fix_z):
+                print("Driver:", drv.data_path)
+                for var in drv.driver.variables:
+                    try:
+                        # if var.targets[0].bone_target == shldr:
+                        var.targets[0].bone_target = shldr_driver_z
+                    except AttributeError:
+                        pass
+    al.restore_layers(arm)        
 
 def constraint_bone_to_empty(context: bpy.types.Context):
     bone = context.active_pose_bone
@@ -667,7 +713,7 @@ def constraint_bone_to_empty(context: bpy.types.Context):
     
 
 class FixFootDriver(bpy.types.Operator):
-    """Adds bone to fix foot rotation driver with IK"""
+    """Adds bone to fix foot corrective driver with IK"""
     bl_label = "Fix Foot Driver"
     bl_idname = "view3d.fix_foot_driver"
     
@@ -676,8 +722,18 @@ class FixFootDriver(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class FixShoulderDriver(bpy.types.Operator):
+    """Adds bones to fix shoulder corrective driver with IK"""
+    bl_label = "Fix Shldr Driver"
+    bl_idname = "view3d.fix_shldr_driver"
+    
+    def execute(self, context: bpy.types.Context):
+        fix_shldr_driver(context.object)
+        return {'FINISHED'}
+
+
 class FixHandDriver(bpy.types.Operator):
-    """Adds bone to fix hand rotation driver with IK"""
+    """Adds bone to fix hand corrective driver with IK"""
     bl_label = "Fix Hand Driver"
     bl_idname = "view3d.fix_hand_driver"
     
@@ -757,7 +813,8 @@ class AddFootRocker(bpy.types.Operator):
         al.restore_layers(context.active_object.data)
         return {'FINISHED'}
 
-classes = [FixFootDriver, FixHandDriver, ConstraintBoneToEmpty, CreateBoneGroups, AddRootBone, RigArm, RigLeg, AddFootRocker]
+classes = [FixFootDriver, FixHandDriver, ConstraintBoneToEmpty, CreateBoneGroups, 
+           AddRootBone, RigArm, RigLeg, AddFootRocker, FixShoulderDriver]
 
 def register():
     for cls in classes:

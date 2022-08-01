@@ -2,7 +2,7 @@ import os
 import sys
 import bpy
 
-FILES_DIR = "C:/Saves/my thingies/blender files/blender/Addons/My shit/MyAwesomeRigScript"
+FILES_DIR = "C:/Saves/my thingies/blender files/blender/Addons/My shit/MARCi"
  
 INIT_FILE = "__init__.py"
  
@@ -54,8 +54,17 @@ class VIEW3D_PT_MARCi_RIGGING(VIEW3D_MARCi, bpy.types.Panel):
         self.layout.operator("view3d.rig_arm", text="Rig arm")
         self.layout.operator("view3d.rig_leg", text="Rig leg")
         self.layout.operator("view3d.add_foot_rocker", text="Add foot rocker")
-        self.layout.operator("view3d.fix_foot_driver", text="Fix Foot Driver")
-        self.layout.operator("view3d.fix_hand_driver", text="Fix hand Driver")
+        
+
+
+class VIEW3D_PT_MARCi_FIXES(VIEW3D_MARCi, bpy.types.Panel):
+    bl_parent_id = "marci_panel"
+    bl_label = "Fixes"
+
+    def draw(self, context):
+        self.layout.operator("view3d.fix_foot_driver", text="Fix Foot driver")
+        self.layout.operator("view3d.fix_hand_driver", text="Fix hand driver")
+        self.layout.operator("view3d.fix_shldr_driver", text="Fix shoulder driver")
 
 class VIEW3D_PT_MARCi_TRANSFER_DRIVERS(VIEW3D_MARCi, bpy.types.Panel):
     bl_parent_id = "marci_panel"
@@ -66,7 +75,11 @@ class VIEW3D_PT_MARCi_TRANSFER_DRIVERS(VIEW3D_MARCi, bpy.types.Panel):
         self.layout.prop(context.scene, PROPS[0][0])
 
 
-classes = [VIEW3D_PT_MARCi, VIEW3D_PT_MARCi_RENAME_BONES, VIEW3D_PT_MARCi_RIGGING, VIEW3D_PT_MARCi_TRANSFER_DRIVERS]
+classes = [VIEW3D_PT_MARCi, 
+           VIEW3D_PT_MARCi_RENAME_BONES, 
+           VIEW3D_PT_MARCi_RIGGING, 
+           VIEW3D_PT_MARCi_TRANSFER_DRIVERS,
+           VIEW3D_PT_MARCi_FIXES]
 
 def register():
     for (prop_name, prop_value) in PROPS:
