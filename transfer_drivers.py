@@ -1,7 +1,5 @@
-from bmesh import new
 import bpy
 
-DEST_RIG = bpy.data.objects["Traxex Rig"]
 from typing import NamedTuple
 
 class Params(NamedTuple):
@@ -20,7 +18,8 @@ class  TransferDrivers(bpy.types.Operator):
         dstkey = context.selected_objects[0].data.shape_keys
         if dstkey == srckey:
             dstkey = context.selected_objects[1].data.shape_keys
-        transfer_drivers(srckey, dstkey, params)
+        dstrig = context.active_object.parent
+        transfer_drivers(srckey, dstkey, dstrig, params)
         return {'FINISHED'}
 
 def register():
@@ -29,7 +28,7 @@ def register():
 def unregister():
     bpy.utils.unregister_class(TransferDrivers)
 
-def transfer_drivers(srckey: bpy.types.Key, dstkey: bpy.types.Key, params: Params):
+def transfer_drivers(srckey: bpy.types.Key, dstkey: bpy.types.Key, dstrig: bpy.types.Object, params: Params):
     fcurves = srckey.animation_data.drivers
     dest_fcurves = None
     try:
@@ -76,12 +75,12 @@ def transfer_drivers(srckey: bpy.types.Key, dstkey: bpy.types.Key, params: Param
                 if v.targets[0].id_type == 'KEY':
                     v.targets[0].id = dstkey
                 elif v.targets[0].id_type == 'ARMATURE':
-                    v.targets[0].id = DEST_RIG.data
+                    v.targets[0].id = dstrig.data
                 else:
                     v.targets[0].id = var.targets[0].id
                 v.targets[0].data_path = var.targets[0].data_path
             else:
-                v.targets[0].id = DEST_RIG
+                v.targets[0].id = dstrig
                 v.targets[0].bone_target = fcurve.driver.variables[0].targets[0].bone_target
                 v.targets[0].transform_space = fcurve.driver.variables[0].targets[0].transform_space
                 v.targets[0].transform_type = fcurve.driver.variables[0].targets[0].transform_type
