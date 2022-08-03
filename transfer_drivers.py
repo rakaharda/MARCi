@@ -18,7 +18,7 @@ class  TransferDrivers(bpy.types.Operator):
         dstkey = context.selected_objects[0].data.shape_keys
         if dstkey == srckey:
             dstkey = context.selected_objects[1].data.shape_keys
-        dstrig = context.active_object.parent
+        dstrig = context.selected_objects.parent
         transfer_drivers(srckey, dstkey, dstrig, params)
         return {'FINISHED'}
 
