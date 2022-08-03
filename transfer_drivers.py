@@ -16,9 +16,10 @@ class  TransferDrivers(bpy.types.Operator):
         params = Params(context.scene.transfer_only_existing)
         srckey = context.active_object.data.shape_keys
         dstkey = context.selected_objects[0].data.shape_keys
+        dstrig = context.selected_objects[0].parent
         if dstkey == srckey:
             dstkey = context.selected_objects[1].data.shape_keys
-        dstrig = dstkey.parent
+            dstrig = context.selected_objects[1].parent
         transfer_drivers(srckey, dstkey, dstrig, params)
         return {'FINISHED'}
 
@@ -40,16 +41,15 @@ def transfer_drivers(srckey: bpy.types.Key, dstkey: bpy.types.Key, dstrig: bpy.t
         try:
             new_fcurve = None
             if params.transfer_only_existing:
-                for f in dstkey.key_blocks:
-                    if fcurve.data_path[12:-8] == f.name:
+                for key in dstkey.key_blocks:
+                    if fcurve.data_path[12:-8] == key.name:
                         new_fcurve = dest_fcurves.new(fcurve.data_path)
             else:
                 new_fcurve = dest_fcurves.new(fcurve.data_path)
         except RuntimeError as e:
-            print(e)
-            print(fcurve.data_path)
+            print(fcurve.data_path, e)
             continue
-        if new_fcurve == None:
+        if new_fcurve is None:
             continue
         print(fcurve.data_path)
         while len(new_fcurve.keyframe_points) > 0:
@@ -64,7 +64,7 @@ def transfer_drivers(srckey: bpy.types.Key, dstkey: bpy.types.Key, dstrig: bpy.t
                 kf.handle_left_type = fcurve.keyframe_points[i].handle_left_type
                 kf.handle_right = fcurve.keyframe_points[i].handle_right
                 kf.handle_right_type = fcurve.keyframe_points[i].handle_right_type
-        new_fcurve.driver.type = fcurve.driver.type 
+        new_fcurve.driver.type = fcurve.driver.type
         new_fcurve.driver.expression = fcurve.driver.expression
         for var in fcurve.driver.variables:
             v = new_fcurve.driver.variables.new()
