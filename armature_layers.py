@@ -1,4 +1,3 @@
-from ftplib import all_errors
 import bpy
 
 class ArmatureLayers:
