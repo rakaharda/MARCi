@@ -258,7 +258,6 @@ def constraint_ik_rotation(armature, bone_name, x_axis = True, y_axis = False, z
 
 def add_copy_rotation_constraint(rig, bone_name, target_name, axis = "xyz", mix_mode = 'ADD', target_space = 'LOCAL_WITH_PARENT', owner_space = 'LOCAL'):
     """Adds Copy Rotation constraint to the bone in local space"""
-    
     posemode()
     bone = bpy.context.object.pose.bones[bone_name]
     select_bone(rig.data, bone_name)
@@ -266,12 +265,13 @@ def add_copy_rotation_constraint(rig, bone_name, target_name, axis = "xyz", mix_
     constraint = bone.constraints[-1]
     constraint.target = rig
     constraint.subtarget = target_name
-    constraint.use_x = axis.lower().__contains__("x")
-    constraint.use_y = axis.lower().__contains__("y")
-    constraint.use_z = axis.lower().__contains__("z")
+    constraint.use_x = "x" in axis.lower()
+    constraint.use_y = "y" in axis.lower()
+    constraint.use_z = "z" in axis.lower()
     constraint.mix_mode = mix_mode
     constraint.target_space = target_space
     constraint.owner_space = owner_space
+
 
 def add_shrinkwrap(armature, bone_name, object):
     """Adds Shrinkwrap Relationship to bone with object as target"""
@@ -285,20 +285,7 @@ def add_shrinkwrap(armature, bone_name, object):
     constraint.shrinkwrap_type = 'PROJECT'
     constraint.project_axis = 'POS_Y'
     constraint.project_limit = 0.05
-
-def left_bone(bone = ""):
-    return bone + ".L"
-
-def right_bone(bone  = ""):
-    return bone + ".R"
-
-def mch_bone(bone):
-    return bone + ".MCH"
-
-def ctrl_bone(bone):
-    return bone + ".Controller"
-
-SIDES = [left_bone, right_bone]
+    
 
 def add_vertex_subtract(from_group, group, prefix = ""):
     bpy.ops.object.modifier_add(type='VERTEX_WEIGHT_MIX')
