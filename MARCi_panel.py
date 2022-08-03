@@ -46,6 +46,7 @@ class VIEW3D_PT_MARCi_RENAME_BONES(VIEW3D_MARCi, bpy.types.Panel):
 
 class VIEW3D_PT_MARCi_RIGGING(VIEW3D_MARCi, bpy.types.Panel):
     bl_parent_id = "marci_panel"
+    bl_idname = "VIEW3D_PT_marci_rigging"
     bl_label = "Rigging"
     
     def draw(self, context):
@@ -54,7 +55,13 @@ class VIEW3D_PT_MARCi_RIGGING(VIEW3D_MARCi, bpy.types.Panel):
         self.layout.operator("view3d.rig_arm", text="Rig arm")
         self.layout.operator("view3d.rig_leg", text="Rig leg")
         self.layout.operator("view3d.add_foot_rocker", text="Add foot rocker")
-        
+
+class VIEW3D_PT_MARCI_BONE_SHAPES(VIEW3D_MARCi, bpy.types.Panel):
+    bl_parent_id = "VIEW3D_PT_marci_rigging"
+    bl_label = "Bone Shapes"
+
+    def draw(self, context):
+        self.layout.operator("view3d.shape_finger_bones", text="Create finger bones")   
 
 
 class VIEW3D_PT_MARCi_FIXES(VIEW3D_MARCi, bpy.types.Panel):
@@ -75,11 +82,12 @@ class VIEW3D_PT_MARCi_TRANSFER_DRIVERS(VIEW3D_MARCi, bpy.types.Panel):
         self.layout.prop(context.scene, PROPS[0][0])
 
 
-classes = [VIEW3D_PT_MARCi, 
-           VIEW3D_PT_MARCi_RENAME_BONES, 
-           VIEW3D_PT_MARCi_RIGGING, 
+classes = [VIEW3D_PT_MARCi,
+           VIEW3D_PT_MARCi_RENAME_BONES,
+           VIEW3D_PT_MARCi_RIGGING,
            VIEW3D_PT_MARCi_TRANSFER_DRIVERS,
-           VIEW3D_PT_MARCi_FIXES]
+           VIEW3D_PT_MARCi_FIXES,
+           VIEW3D_PT_MARCI_BONE_SHAPES]
 
 def register():
     for (prop_name, prop_value) in PROPS:
