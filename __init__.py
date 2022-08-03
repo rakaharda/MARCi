@@ -7,7 +7,7 @@ bl_info = {
     'version': '0.0.1'
 }
 
-modules_names = ['rig_utils', 'rename_bones', 'transfer_drivers']
+modules_names = ['rigging', 'rename_bones', 'transfer_drivers', 'rig_shapes']
 
 modules_full_names = {}
 
