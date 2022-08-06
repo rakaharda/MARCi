@@ -303,3 +303,12 @@ def lock_bone_rot(armature, bone_name, axis = 'xyz'):
     bone.lock_rotation[0] = axis.lower().__contains__("x")
     bone.lock_rotation[1] = axis.lower().__contains__("y")
     bone.lock_rotation[2] = axis.lower().__contains__("z")
+
+
+def assign_selected_to_bone_group(context, bone_group):
+    posemode()
+    for i, group in enumerate(context.active_object.pose.bone_groups):
+        if group.name == bone_group:
+            bpy.ops.pose.group_assign(type=i + 1)
+            return
+    print(f"Bone group with name {bone_group} not found")
