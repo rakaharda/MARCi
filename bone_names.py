@@ -19,7 +19,10 @@ def ctrl_bone(bone):
 
 
 SIDES = [left_bone, right_bone]
+# Finger bones enumerate like 'Mid1.L', 'Mid2.L', 'Mid3.L'
 FINGERS = ["Thumb", "Index", "Mid", "Ring", "Pinky"]
+# Toe bones enumerate like 'SmallToe1', 'SmallToe1_2'
+TOES = ["BigToe", "SmallToe1", "SmallToe2", "SmallToe3", "SmallToe4"]
 ARM_BONES = ["ShldrBend", "ShldrTwist", "ForearmBend", "ForearmTwist"]
 LEG_BONES = ["ThighBend", "ThighTwist", "Shin"]
 HAND_CTRL = "Hand.controller"
@@ -30,3 +33,9 @@ HAND = "Hand"
 FOOT = "Foot"
 METATARSALS = "Metatarsals"
 TOE = "Toe"
+FOOT_ROCKER = "Foot.Rocker"
+FOOT_BONES = [FOOT, METATARSALS, TOE]
+SPINE_BONES = ["hip", "pelvis", "abdomenLower", "abdomenUpper", 
+               "chestLower", "chestUpper", "neckLower", "neckUpper", "head"]
+PECTORAL = "Pectoral"
+COLLAR = "Collar"
