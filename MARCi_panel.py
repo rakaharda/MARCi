@@ -61,7 +61,11 @@ class VIEW3D_PT_MARCI_BONE_SHAPES(VIEW3D_MARCi, bpy.types.Panel):
     bl_label = "Bone Shapes"
 
     def draw(self, context):
-        self.layout.operator("view3d.shape_finger_bones", text="Create finger bones")   
+        self.layout.label(text="Requires boneWidget")
+        self.layout.operator("view3d.shape_arm_bones", text="Shape arm bones")
+        self.layout.operator("view3d.shape_finger_bones", text="Shape finger bones")
+        self.layout.operator("view3d.shape_spine_bones", text="Shape spine bones")
+        self.layout.operator("view3d.shape_leg_bones", text="Shape leg bones")
 
 
 class VIEW3D_PT_MARCi_FIXES(VIEW3D_MARCi, bpy.types.Panel):
