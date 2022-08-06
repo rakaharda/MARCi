@@ -6,15 +6,14 @@ class RenameBones(bpy.types.Operator):
     bl_idname = "view3d.rename_bones"
     
     def execute(self, context):
-        if(bpy.context.mode not in ["EDIT_ARMATURE", "OBJECT"]):
+        if(context.mode not in ["EDIT_ARMATURE", "OBJECT"]):
             return ('CANCELED')
         
-        if(bpy.context.mode == "EDIT_ARMATURE"):
+        if(context.mode == "EDIT_ARMATURE"):
             self.rename_bones(context.visible_bones)
-        elif(bpy.context.mode == "OBJECT"):
-            for armature in bpy.data.armatures:
-                bones = armature.bones
-                self.rename_bones(bones)
+        elif(context.mode == "OBJECT"):
+            bones = context.active_object.data.bones
+            self.rename_bones(bones)
         return {'FINISHED'}
     
     
