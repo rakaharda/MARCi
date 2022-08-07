@@ -21,6 +21,7 @@ def ctrl_bone(bone):
 SIDES = [left_bone, right_bone]
 # Finger bones enumerate like 'Mid1.L', 'Mid2.L', 'Mid3.L'
 FINGERS = ["Thumb", "Index", "Mid", "Ring", "Pinky"]
+FINGER_CTRL = "Finger.controller"
 # Toe bones enumerate like 'SmallToe1', 'SmallToe1_2'
 TOES = ["BigToe", "SmallToe1", "SmallToe2", "SmallToe3", "SmallToe4"]
 ARM_BONES = ["ShldrBend", "ShldrTwist", "ForearmBend", "ForearmTwist"]
