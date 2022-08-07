@@ -19,50 +19,45 @@ def rig_fingers_ik(arm: bpy.types.Armature):
         constraint_ik_rotation(f"{finger}3.R", False, True, False)
         
 
-def rig_fingers(arm: bpy.types.Armature):
+def add_finger_controller(context: bpy.types.Context):
     """Adds Copy Rotation based rig for fingers"""
-    for i in range(4):
-        extrude_bone(f"{FINGERS[3]}3.R", (-0.02 + 0.005 * i, 0, 0), f"finger.controller.{i+1}.R", "Hand.R")
-        move_bone(arm, f"finger.controller.{i+1}.R", Vector((-0.02, 0, 0)))
-        if i > 0:
-            add_copy_rotation_constraint(f"finger.controller.{i + 1}.R", "finger.controller.1.R", "x")
-        add_limit_rotation_constraint(f"finger.controller.{i+1}.R", "x", min_x=-90)
-        lock_bone_rot(f"finger.controller.{i+1}.R", "yz")
-    for finger in FINGERS:
-        extrude_bone(f"{finger}3.R", (-0.01, 0, 0), f"{finger}.controller.R", "Hand.R")
-        extrude_bone(f"{finger}3.R", (-0.0075, 0, 0), f"{finger}.controller.1.R", "Hand.R")
-        extrude_bone(f"{finger}3.R", (-0.005, 0, 0), f"{finger}.controller.2.R", "Hand.R")
-        extrude_bone(f"{finger}3.R", (-0.0025, 0, 0), f"{finger}.controller.3.R", "Hand.R")
-        add_copy_rotation_constraint(f"{finger}1.R", f"{finger}.controller.1.R", "x")
-        add_copy_rotation_constraint(f"{finger}2.R", f"{finger}.controller.3.R", "x")
-        add_copy_rotation_constraint(f"{finger}3.R", f"{finger}.controller.2.R", "x")
-        lock_bone_rot(f"{finger}1.R", "yz")
-        lock_bone_rot(f"{finger}2.R", "yz")
-        lock_bone_rot(f"{finger}3.R", "yz")
-        add_copy_rotation_constraint(f"{finger}.controller.R", "finger.controller.1.R", "x")
-        add_limit_rotation_constraint(f"{finger}.controller.R", "x", min_x=-90, affect_transform=False)
-        lock_bone_rot(f"{finger}.controller.R", "yz")
-        add_copy_rotation_constraint(f"{finger}.controller.1.R", f"{finger}.controller.R", "x")
-        add_copy_rotation_constraint(f"{finger}.controller.1.R", "finger.controller.2.R", "x")
-        add_limit_rotation_constraint(f"{finger}.controller.1.R", "x", min_x=-90, affect_transform=False)
-        lock_bone_rot(f"{finger}.controller.1.R", "yz")
-        add_copy_rotation_constraint(f"{finger}.controller.2.R", f"{finger}.controller.R", "x")
-        add_copy_rotation_constraint(f"{finger}.controller.2.R", "finger.controller.3.R", "x")
-        add_limit_rotation_constraint(f"{finger}.controller.2.R", "x", min_x=-90, affect_transform=False)
-        lock_bone_rot(f"{finger}.controller.2.R", "yz")
-        add_copy_rotation_constraint(f"{finger}.controller.3.R", f"{finger}.controller.2.R", "x")
-        add_copy_rotation_constraint(f"{finger}.controller.3.R", "finger.controller.4.R", "x")
-        add_limit_rotation_constraint(f"{finger}.controller.3.R", "x", min_x=-90, affect_transform=False)
-        lock_bone_rot(f"{finger}.controller.3.R", "yz")
+    rig = context.active_object
+    arm = rig.data
+    for side in SIDES:
+        finger_ctrl = side(FINGER_CTRL)
+        extrude_bone(arm, side(HAND), (0, 0.1, 0), finger_ctrl, side(HAND), 'NORMAL')
+        editmode()
+        if side() == '.L':
+            rig.data.edit_bones[finger_ctrl].roll = math.radians(-130)
+        else:
+            rig.data.edit_bones[finger_ctrl].roll = math.radians(130)
+        posemode()
+        select_bone(arm, finger_ctrl)
+        context.active_pose_bone.lock_location[0] = True
+        context.active_pose_bone.lock_location[2] = True
+        assign_selected_to_bone_group(bpy.context, BoneGroups.sk_ctrl)
+        add_limit_rotation_constraint(arm, finger_ctrl, axis='xyz', max_x=110, min_x=-50, max_y=5, min_y=-5, max_z=18, min_z=-18)
+        add_limit_loc_constraint(arm, finger_ctrl, min_y = -0.1, max_y = 0)
+        for finger in FINGERS[1:]:
+            for i in range (1, 3):
+                grab_constraint = "MARCi Grab"
+                clench_constraint = "MARCi Clench"
+                f = side(f"{finger}{i}")
+                axis = 'xyz'
+                if i > 1:
+                    axis = 'x'
+                add_copy_rotation_constraint(rig, f, finger_ctrl, axis, target_space='LOCAL', name=grab_constraint)
+                add_transformation_constraint(context, f, finger_ctrl,
+                                              map_to='ROTATION', map_to_x_from='Y',
+                                              from_min_y=-0.1, to_min_x = 90,
+                                              name=clench_constraint)
+                posemode()
+                select_bone(arm, f)
+                bpy.ops.constraint.move_to_index(constraint=grab_constraint, owner='BONE', index=0)
+                bpy.ops.constraint.move_to_index(constraint=clench_constraint, owner='BONE', index=0)
 
-
-def create_bone_group(bone_groups, name='Group', color_set='DEFAULT'):
-    for group in bone_groups:
-        if group.name == name:
-            group.color_set = color_set
-            return
-    bone_groups.new(name=name)
-    bone_groups[-1].color_set = color_set
+                
+           
 
 
 def create_bone_groups(context):
@@ -157,16 +152,15 @@ def add_pole_constraint(rig, extrude_vec, first_bone, second_bone,
                         third_bone, pole, controller, name):
     """Adds bones and constraints
     to avoid IK flipping around pole"""
-    sides = [".L"]
-    for side in sides:
-        extrude_bone(rig.data, first_bone + side, extrude_vec, f"{name}.1{side}", rig.data.bones[first_bone + side].parent.name, from_head=True, orient_type='NORMAL')
-        extrude_bone(rig.data, second_bone+ side, extrude_vec, f"{name}.2{side}", None, orient_type='NORMAL')
-        extrude_bone(rig.data, third_bone+ side, extrude_vec, f"{name}.3{side}", controller + side, orient_type='NORMAL')
-        add_copy_transforms_constraint(rig, f"{name}.2{side}", f"{name}.1{side}", 1)
-        add_copy_transforms_constraint(rig, f"{name}.2{side}", f"{name}.3{side}", 0.5)
-        add_damped_track_modifier(rig, f"{name}.2{side}", controller + side)
+    for side in SIDES:
+        extrude_bone(rig.data, side(first_bone), extrude_vec, f"{name}.1{side()}", rig.data.bones[side(first_bone)].parent.name, from_head=True, orient_type='NORMAL')
+        extrude_bone(rig.data, side(second_bone), extrude_vec, f"{name}.2{side()}", None, orient_type='NORMAL')
+        extrude_bone(rig.data, side(third_bone), extrude_vec, f"{name}.3{side()}", side(controller), orient_type='NORMAL')
+        add_copy_transforms_constraint(rig, f"{name}.2{side()}", f"{name}.1{side()}", 1)
+        add_copy_transforms_constraint(rig, f"{name}.2{side()}", f"{name}.3{side()}", 0.5)
+        add_damped_track_modifier(rig, f"{name}.2{side()}", side(controller))
         editmode()
-        rig.data.edit_bones[pole + side].parent = rig.data.edit_bones[f"{name}.2{side}"]
+        rig.data.edit_bones[side(pole)].parent = rig.data.edit_bones[f"{name}.2{side()}"]
 
 
 def rig_foot_rocker(rig: bpy.types.Object):
@@ -251,7 +245,7 @@ def rig_foot_rocker(rig: bpy.types.Object):
         print(toe_mch)
         duplicate_bone(armature, side(TOE), toe_mch, foot_roll_heel)
         select_bone(armature, toe_mch)
-        assign_selected_to_bone_group(bpy.context, BoneGroups.ctrl)
+        assign_selected_to_bone_group(bpy.context, BoneGroups.sk_ctrl)
         bpy.context.active_bone.use_deform = False
         bpy.context.active_bone.layers = al.single_layer(1)
 
@@ -259,7 +253,7 @@ def rig_foot_rocker(rig: bpy.types.Object):
         extrude_bone(armature, side(FOOT), (0, bone_len, 0), foot_rocker, side(LEG_CONTROLLER), from_head = True)
         posemode()
         select_bone(armature, foot_rocker)
-        assign_selected_to_bone_group(bpy.context, BoneGroups.ctrl)
+        assign_selected_to_bone_group(bpy.context, BoneGroups.sk_ctrl)
         
         add_copy_rotation_constraint(rig, foot_roll_side_left, foot_rocker, "y", 'REPLACE', 'LOCAL')
         add_limit_rotation_constraint(armature, foot_roll_side_left, "y", min_y = 0, max_y = 180)
@@ -447,7 +441,7 @@ class CreateBoneGroups(bpy.types.Operator):
 
 
 class AddRootBone(bpy.types.Operator):
-    """Adds root bone and parents hip to it"""
+    """Adds root bone and parents hip to it, changes rotation mode of all bones to Euler XYZ"""
     bl_label = "Adds root bone"
     bl_idname = "view3d.add_root_bone"
     def execute(self, context: bpy.types.Context):
@@ -460,6 +454,8 @@ class AddRootBone(bpy.types.Operator):
         posemode()
         select_bone(context.active_object.data, 'Root')
         assign_selected_to_bone_group(context, BoneGroups.ctrl)
+        bpy.ops.pose.select_all(action='SELECT')
+        bpy.ops.pose.rotation_mode_set(type='XYZ')
         if current_mode == 'OBJECT':
             posemode() 
         else:
@@ -477,6 +473,16 @@ class RigArm(bpy.types.Operator):
         al.restore_layers(context.active_object.data)
         return {'FINISHED'}
 
+
+class AddFingerController(bpy.types.Operator):
+    """Adds controller to simultaneous finger rotation"""
+    bl_label = "Add finger controller"
+    bl_idname = "view3d.add_finger_controller"
+    def execute(self, context: bpy.types.Context):
+        al.show_all(context.active_object.data)
+        add_finger_controller(context)
+        al.restore_layers(context.active_object.data)
+        return {'FINISHED'}
 
 class RigLeg(bpy.types.Operator):
     """Rigs leg with IK"""
@@ -503,7 +509,7 @@ class AddFootRocker(bpy.types.Operator):
 
 
 classes = [FixFootDriver, FixHandDriver, ConstraintBoneToEmpty, CreateBoneGroups, 
-           AddRootBone, RigArm, RigLeg, AddFootRocker, FixShoulderDriver]
+           AddRootBone, RigArm, RigLeg, AddFootRocker, FixShoulderDriver, AddFingerController]
 
 def register():
     for cls in classes:
@@ -512,25 +518,4 @@ def register():
 def unregister():
     for cls in classes:
         bpy.utils.register_class(cls)
-
-def rig_object():
-    rig = bpy.context.active_object
-    if rig.type != 'ARMATURE':
-        return
-    armature = rig.data
-    bpy.context.object.data.use_mirror_x = False
-    current_layers = armature.layers.copy()
-    armature.layers = [True for x in range(32)]
-#    add_bone("Root")
-#    create_bone_groups(bpy.context)
-#    rig_arm(rig)
-#    rig_leg(rig)
-#    add_pole_constraint(rig, (0, 0.02, 0), LEG_BONES[0], LEG_BONES[1], LEG_BONES[2], LEG_POLE, LEG_CONTROLLER, "Leg.pole.constraint")
-#    rig_foot_rocker(rig)
-    # fix_hand_driver(rig)
-#    fix_foot_driver(rig)
-    armature.layers = current_layers
-
-if __name__ == "__main__":
-    rig_object()
         

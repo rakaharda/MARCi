@@ -53,6 +53,7 @@ class VIEW3D_PT_MARCi_RIGGING(VIEW3D_MARCi, bpy.types.Panel):
         self.layout.operator("view3d.create_bone_groups", text="Create bone groups")
         self.layout.operator("view3d.add_root_bone", text="Add root bone")
         self.layout.operator("view3d.rig_arm", text="Rig arm")
+        self.layout.operator("view3d.add_finger_controller", text="Add finger controller")
         self.layout.operator("view3d.rig_leg", text="Rig leg")
         self.layout.operator("view3d.add_foot_rocker", text="Add foot rocker")
 
