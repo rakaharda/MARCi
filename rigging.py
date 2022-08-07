@@ -39,14 +39,15 @@ def add_finger_controller(context: bpy.types.Context):
         add_limit_rotation_constraint(arm, finger_ctrl, axis='xyz', max_x=110, min_x=-50, max_y=5, min_y=-5, max_z=18, min_z=-18)
         add_limit_loc_constraint(arm, finger_ctrl, min_y = -0.1, max_y = 0)
         for finger in FINGERS[1:]:
-            for i in range (1, 3):
+            for i in range (1, 4):
                 grab_constraint = "MARCi Grab"
                 clench_constraint = "MARCi Clench"
                 f = side(f"{finger}{i}")
                 axis = 'xyz'
                 if i > 1:
                     axis = 'x'
-                add_copy_rotation_constraint(rig, f, finger_ctrl, axis, target_space='LOCAL', name=grab_constraint)
+                if i < 3:
+                    add_copy_rotation_constraint(rig, f, finger_ctrl, axis, target_space='LOCAL', name=grab_constraint)
                 add_transformation_constraint(context, f, finger_ctrl,
                                               map_to='ROTATION', map_to_x_from='Y',
                                               from_min_y=-0.1, to_min_x = 90,
