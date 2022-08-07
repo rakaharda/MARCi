@@ -30,6 +30,7 @@ def editmode():
     if bpy.context.mode != "EDIT_ARMATURE":
         bpy.ops.object.editmode_toggle()
 
+
 def select_bone(armature, bone_name, multiple=False, head = True, tail = True):
     """Selects given bone"""
 
@@ -135,6 +136,7 @@ def add_ik_modifier(rig, bone_name, chain_length=0,
     constraint.pole_angle = math.radians(pole_angle)
     bpy.ops.object.posemode_toggle()
 
+
 def remove_constraint(rig, bone_name, constraint):
     posemode()
     bone = rig.pose.bones[bone_name]
@@ -142,6 +144,7 @@ def remove_constraint(rig, bone_name, constraint):
         bone.constraints.remove(bone.constraints[constraint])
     except KeyError:
         print(f"Constraint {constraint} in bone {bone_name} not found")
+
 
 def add_limit_loc_constraint(armature, bone_name, 
                              min_x=None, min_y=None, min_z=None,
@@ -241,6 +244,7 @@ def add_locked_track_constraint(rig, bone_name, subtarget, head_tail = 0.0, trac
     constraint.track_axis = track_axis
     constraint.lock_axis = lock_axis
 
+
 def constraint_ik_rotation(armature, bone_name, x_axis = True, y_axis = False, z_axis = True):
     """Constraints rotation of bone"""
 
@@ -253,13 +257,16 @@ def constraint_ik_rotation(armature, bone_name, x_axis = True, y_axis = False, z
     bone.lock_ik_z = z_axis
     bpy.ops.object.posemode_toggle()
 
-def add_copy_rotation_constraint(rig, bone_name, target_name, axis = "xyz", mix_mode = 'ADD', target_space = 'LOCAL_WITH_PARENT', owner_space = 'LOCAL'):
+
+def add_copy_rotation_constraint(rig, bone_name, target_name, axis='xyz', mix_mode='ADD', target_space='LOCAL_WITH_PARENT', owner_space='LOCAL', name=''):
     """Adds Copy Rotation constraint to the bone in local space"""
     posemode()
     bone = bpy.context.object.pose.bones[bone_name]
     select_bone(rig.data, bone_name)
     bpy.ops.pose.constraint_add(type='COPY_ROTATION')
     constraint = bone.constraints[-1]
+    if name is not '':
+        constraint.name = name
     constraint.target = rig
     constraint.subtarget = target_name
     constraint.use_x = "x" in axis.lower()
@@ -284,6 +291,97 @@ def add_shrinkwrap(armature, bone_name, target):
     constraint.project_limit = 0.05
     
 
+def add_transformation_constraint(
+    context: bpy.types.Context, 
+    bone_name: str, 
+    target: str,
+    target_space = 'LOCAL',
+    owner_space = 'LOCAL' ,
+    map_from = 'LOCATION',
+    map_to = 'LOCATION',
+    from_min_x = 0,
+    from_max_x = 0,
+    from_min_y = 0,
+    from_max_y = 0,
+    from_min_z = 0,
+    from_max_z = 0,
+    to_min_x = 0,
+    to_max_x = 0,
+    to_min_y = 0,
+    to_max_y = 0,
+    to_min_z = 0,
+    to_max_z = 0,
+    map_to_x_from = 'X',
+    map_to_y_from = 'Y',
+    map_to_z_from = 'Z',
+    mix = 'ADD',
+    name = ''):
+    """Adds Transformation constraint"""
+    posemode()
+    rig = context.active_object
+    armature = rig.data
+    bone = context.object.pose.bones[bone_name]
+    select_bone(armature, bone_name)
+    bpy.ops.pose.constraint_add(type='TRANSFORM')
+    constraint = bone.constraints[-1]
+    constraint.target = rig
+    constraint.subtarget = target
+    if name is not '':
+        constraint.name = name
+    constraint.target_space = target_space
+    constraint.owner_space = owner_space
+    constraint.map_from = map_from
+    if map_from is 'LOCATION':
+        constraint.from_min_x = from_min_x
+        constraint.from_max_x = from_max_x
+        constraint.from_min_y = from_min_y
+        constraint.from_max_y = from_max_y
+        constraint.from_min_z = from_min_z
+        constraint.from_max_z = from_max_z
+    elif map_from is 'ROTATION':
+        constraint.from_min_x_rot = math.radians(from_min_x)
+        constraint.from_max_x_rot = math.radians(from_max_x)
+        constraint.from_min_y_rot = math.radians(from_min_y)
+        constraint.from_max_y_rot = math.radians(from_max_y)
+        constraint.from_min_z_rot = math.radians(from_min_z)
+        constraint.from_max_z_rot = math.radians(from_max_z)
+    elif map_from is 'SCALE':
+        constraint.from_min_x_scale = from_min_x
+        constraint.from_max_x_scale = from_max_x
+        constraint.from_min_y_scale = from_min_y
+        constraint.from_max_y_scale = from_max_y
+        constraint.from_min_z_scale = from_min_z
+        constraint.from_max_z_scale = from_max_z
+    constraint.map_to = map_to
+    constraint.map_to_x_from = map_to_x_from
+    constraint.map_to_y_from = map_to_y_from
+    constraint.map_to_z_from = map_to_z_from
+    if map_to is 'LOCATION':
+        constraint.to_min_x = to_min_x
+        constraint.to_max_x = to_max_x
+        constraint.to_min_y = to_min_y
+        constraint.to_max_y = to_max_y
+        constraint.to_min_z = to_min_z
+        constraint.to_max_z = to_max_z
+        constraint.mix_mode = mix
+    elif map_to is 'ROTATION':
+        constraint.to_min_x_rot = math.radians(to_min_x)
+        constraint.to_max_x_rot = math.radians(to_max_x)
+        constraint.to_min_y_rot = math.radians(to_min_y)
+        constraint.to_max_y_rot = math.radians(to_max_y)
+        constraint.to_min_z_rot = math.radians(to_min_z)
+        constraint.to_max_z_rot = math.radians(to_max_z)
+        constraint.mix_mode_rot = mix
+    elif map_to is 'SCALE':
+        constraint.to_min_x_scale = to_min_x
+        constraint.to_max_x_scale = to_max_x
+        constraint.to_min_y_scale = to_min_y
+        constraint.to_max_y_scale = to_max_y
+        constraint.to_min_z_scale = to_min_z
+        constraint.to_max_z_scale = to_max_z
+        constraint.mix_mode_scale = mix
+
+
 def add_vertex_subtract(from_group, group, prefix = ""):
     bpy.ops.object.modifier_add(type='VERTEX_WEIGHT_MIX')
     modifier = bpy.context.object.modifiers[-1]
@@ -293,6 +391,7 @@ def add_vertex_subtract(from_group, group, prefix = ""):
     modifier.mix_set = 'ALL'
     modifier.mix_mode = 'SUB'
     bpy.ops.object.modifier_move_to_index(modifier=modifier.name, index=0)
+
 
 def lock_bone_rot(armature, bone_name, axis = 'xyz'):
     """Locks bone rotation along given axis"""
@@ -312,3 +411,12 @@ def assign_selected_to_bone_group(context, bone_group):
             bpy.ops.pose.group_assign(type=i + 1)
             return
     print(f"Bone group with name {bone_group} not found")
+
+
+def create_bone_group(bone_groups, name='Group', color_set='DEFAULT'):
+    for group in bone_groups:
+        if group.name == name:
+            group.color_set = color_set
+            return
+    bone_groups.new(name=name)
+    bone_groups[-1].color_set = color_set
