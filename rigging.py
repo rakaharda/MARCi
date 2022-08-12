@@ -383,7 +383,7 @@ def constraint_bone_to_empty(context: bpy.types.Context):
     bone = context.active_pose_bone
     bone_mat = bone.matrix
     arm_mat = context.object.matrix_world
-    matrix = bone_mat @ arm_mat
+    matrix = arm_mat @ bone_mat
     vec = tuple(x[3] for x in matrix[:-1])
     objectmode()
     bpy.ops.object.empty_add(type='PLAIN_AXES', align='WORLD', location=vec, scale=(1, 1, 1))
